@@ -1,0 +1,34 @@
+name: Sync from ChatGPT
+on:
+  workflow_dispatch:
+    inputs:
+      file_name:
+        description: 'File to update (path in repo)'
+        required: true
+      content:
+        description: 'Base64-encoded content from ChatGPT'
+        required: true
+      commit_message:
+        description: 'Commit message'
+        default: 'update from ChatGPT'
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Decode file and write to repo
+        run: |
+          echo "${{ github.event.inputs.content }}" | base64 --decode > "${{ github.event.inputs.file_name }}"
+
+      - name: Commit and push
+        env:
+          GH_TOKEN: ${{ secrets.CHATGPT_COMMIT_TOKEN }}
+        run: |
+          git config user.name "ZamaBot"
+          git config user.email "zamabot@users.noreply.github.com"
+          git add "${{ github.event.inputs.file_name }}"
+          git commit -m "${{ github.event.inputs.commit_message }}" || echo "No changes"
+          git push
